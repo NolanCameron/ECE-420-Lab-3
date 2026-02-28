@@ -24,8 +24,14 @@ void gaussianElimination(double** A, double* b, double n, double** U){
 *D is the output matrix (n x (n + 1))
 *
 */
-void jordanElimination(double** A, double* b, double n, double** U){
-
+void jordanElimination(int n, double** U, double** D){
+    memcpy(D,U,sizeof(U));
+    for(int k=n; k >= 2; k--){
+        for(int i=1; i<k-1; i++){
+            D[i][n+1] -= (D[i][k]/D[k][k]) * D[k][n+1];
+            D[i][k] = 0;
+        }
+    }
 }
 
 
