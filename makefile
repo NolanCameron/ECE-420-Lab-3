@@ -1,25 +1,27 @@
 CC = gcc
-CFLAGS = -Wall -Werror -Wvla -lpthread -ggdb3 -lm
+CFLAGS = -Wall -Werror -Wvla -fopenmp -lpthread -ggdb3 -lm
+
 DEPS = timer.h Lab3IO.h
 OBJ = main.o Lab3IO.o
 
+
+
 main: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS)
-
 all: datagen main
-	
+
 .PHONY: datagen
-datagen: datagen.o
+datagen: datagen.o Lab3IO.o
 	$(CC) -o $@ $^ $(CFLAGS)
 
 
 .PHONY: memtest
 memtest: main 
-	valgrind --tool=memcheck --leak-check=yes ./main 100
-
+	valgrind -s --track-origins=yes --tool=memcheck --leak-check=yes --show-leak-kinds=all ./main 4
+	
 .PHONY: threadtest
 threadtest: main
-	valgrind --tool=helgrind ./main 100
+	valgrind --tool=helgrind ./main 4
 
 .PHONY: clean
 clean:
