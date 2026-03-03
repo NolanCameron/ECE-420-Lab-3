@@ -23,49 +23,63 @@ void gaussianElimination(double** G, int n, double** U){
     for(int i = 0; i < n; ++i){
         memcpy(U[i], G[i], (n + 1)*sizeof(double));
     }
-    #pragma omp parallel
-    {
-        for (int k = 0; k < n - 1; ++k){
-            
-            //Pivot for absoulte max
-            #pragma omp single
-            {
-                int maxRow = k;
-                double maxVal = fabs(U[k][k]);
 
-                for(int p = k + 1; p < n; ++p){
-                    //Find max
-                    if(fabs(U[p][k]) > maxVal){
-                        maxVal = fabs(U[p][k]);
-                        maxRow = p;
-                    }  
+    for (int k = 0; k < n - 1; ++k){
+        
+        //Pivot for absoulte max
+        int maxRow = k;
+        int maxVal = 0;
+        int localMaxVal = 0;
+        int localMaxRow = k;
+        #pragma omp parallel private(localMaxVal, localMaxRow) shared(U, n)
+        {
 
-                }
-                //Pivot
-                double* temp = U[k];
-                U[k] = U[maxRow];
-                U[maxRow] = temp;
+            #pragma omp for 
+            for(int p = k; p < n; ++p){
+                //Find max
+                if(fabs(U[p][k]) > maxVal){
+                    localMaxVal = fabs(U[p][k]);
+                    localMaxRow = p;
+                }  
             }
-            #pragma omp barrier
-            //printf("Pivot %d, %d\n", k+1, maxRow+1);
+            if(localMaxVal > maxVal){
+                #pragma omp critical
+                {
+                    if(localMaxVal > maxVal){
+                        maxRow = localMaxRow;
+                        maxVal = localMaxVal;
+                    }
+                }
+
+            }
+        }
+        //Pivot
+        double* temp = U[k];
+        {
+            U[k] = U[maxRow];
+            U[maxRow] = temp;
+        }
+        
+        #pragma omp barrier
+        //printf("Pivot %d, %d\n", k+1, maxRow+1);
+        //PrintMat((double**)U, 3, 4);
+        //printf("\n");
+
+        //Elimination
+
+        for (int i = k + 1; i < n; ++i){
+            double temp = U[i][k]/U[k][k];
+            #pragma omp parallel for default(none) shared(k, U, temp, i, n)
+            for (int j = k; j < n + 1; ++j){
+                U[i][j] = U[i][j] - temp*U[k][j];
+            }
+            //printf("row Replacement %d %f*R%d\n", i+1, -temp, k+1);
             //PrintMat((double**)U, 3, 4);
             //printf("\n");
-
-            //Elimination
-            #pragma omp for
-            for (int i = k + 1; i < n; ++i){
-                double temp = U[i][k]/U[k][k];
-                for (int j = k; j < n + 1; ++j){
-                    U[i][j] = U[i][j] - temp*U[k][j];
-                }
-                //printf("row Replacement %d %f*R%d\n", i+1, -temp, k+1);
-                //PrintMat((double**)U, 3, 4);
-                //printf("\n");
-            }
-            #pragma omp barrier
-
-            
         }
+        #pragma omp barrier
+
+        
     }
 }
 
@@ -77,8 +91,8 @@ void gaussianElimination(double** G, int n, double** U){
 *
 */
 void jordanElimination(int n, double** U, double** D){
-    for(int i=0; i <= n; i++){
-        memcpy(D[i], U[i], sizeof(double)*(n+2));
+    for(int i=0; i < n; i++){
+        memcpy(D[i], U[i], sizeof(double)*(n+1));
     }
     for(int k=n; k >= 2; k--){
         #pragma omp parallel for default(none) shared(k,D,n)
@@ -121,6 +135,7 @@ int main(int argc, char* argv[]){
         x[i]= D[i][n] / D[i][i]; 
     }
     Lab3SaveOutput(x, n, Time);
+    PrintMat(U, n, n + 1); //Testing
     DestroyMat(G, n);
     DestroyMat(U, n);
     DestroyMat(D, n);
