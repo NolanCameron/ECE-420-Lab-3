@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <omp.h>
 #include <math.h>
+
 #include "Lab3IO.h"
 #include "timer.h"
 
@@ -76,19 +77,14 @@ void gaussianElimination(double** G, int n, double** U){
 *
 */
 void jordanElimination(int n, double** U, double** D){
-    
-    for(int i = 0; i < n; ++i){
-        memcpy(D[i], U[i], (n + 1)*sizeof(double));
+    for(int i=0; i <= n; i++){
+        memcpy(D[i], U[i], sizeof(double)*(n+2));
     }
-    #pragma omp parallel
-    {
-        for(int k=n-1; k >= 1; --k){
-            #pragma omp for
-            for(int i=0; i<k; ++i){
-                D[i][n] -= (D[i][k]/D[k][k]) * D[k][n];
-                D[i][k] = 0.0;
-            }
-            #pragma omp barrier
+    for(int k=n; k >= 2; k--){
+        #pragma omp parallel for default(none) shared(k,D,n)
+        for(int i=1; i<k-1; i++){
+            D[i][n+1] -= (D[i][k]/D[k][k])*D[k][n+1];
+            D[i][k] = 0;
         }
     }
 }
