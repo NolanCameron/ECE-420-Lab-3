@@ -25,29 +25,51 @@ void gaussianElimination(double** G, int n, double** U){
         //Pivot for absoulte max
         int maxRow = k;
         int maxVal = 0;
-        for(int p = k; p < n; ++p){
-            //Find max
-            if(abs(U[p][k]) > maxVal){
-                maxVal = abs(U[p][k]);
-                maxRow = p;
-            }  
+        int localMaxVal = 0;
+        int localMaxRow = k;
+        #pragma omp parallel private(localMaxVal, localMaxRow) shared(U, n)
+        {
 
+            #pragma omp for 
+            for(int p = k; p < n; ++p){
+                //Find max
+                if(abs(U[p][k]) > maxVal){
+                    localMaxVal = abs(U[p][k]);
+                    localMaxRow = p;
+                }  
+            }
+            if(localMaxVal > maxVal){
+                #pragma critical
+                {
+                    if(localMaxVal > maxVal){
+                        maxRow = localMaxRow;
+                        maxVal = localMaxVal;
+                    }
+                }
+
+            }
         }
         //Pivot
         double* temp = U[k];
-        U[k] = U[maxRow];
-        U[maxRow] = temp;
+        #pragma omp critical
+        {
+            U[k] = U[maxRow];
+            U[maxRow] = temp;
+        }
 
         printf("Pivot %d, %d\n", k+1, maxRow+1);
         PrintMat((double**)U, 3, 4);
         printf("\n");
 
         //Elimination
+        #pragma omp parallel for shared(U, n)
         for (int i = k + 1; i < n; ++i){
             double temp = U[i][k]/U[k][k];
+
             for (int j = k; j < n + 1; ++j){
                 U[i][j] = U[i][j] - temp*U[k][j];
             }
+
             printf("row Replacement %d %f*R%d\n", i+1, -temp, k+1);
             PrintMat((double**)U, 3, 4);
             printf("\n");

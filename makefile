@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Werror -Wvla -lpthread -ggdb3 -lm
+CFLAGS = -Wall -Werror -Wvla -lpthread -ggdb3 -lm -fopenmp
 DEPS = timer.h Lab3IO.h
 OBJ = main.o Lab3IO.o
 
