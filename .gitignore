@@ -57,3 +57,5 @@ dkms.conf
 main
 datagen
 vgcore.*
+data_input
+data_output

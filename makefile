@@ -17,7 +17,7 @@ datagen: datagen.o Lab3IO.o
 
 .PHONY: memtest
 memtest: main 
-	valgrind -s --track-origins=yes --tool=memcheck --leak-check=yes --show-leak-kinds=all ./main 4
+	valgrind -s --track-origins=yes --tool=memcheck --leak-check=yes --show-leak-kinds=all ./main 1
 	
 .PHONY: threadtest
 threadtest: main
