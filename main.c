@@ -55,21 +55,22 @@ void gaussianElimination(double** G, int n, double** U){
         }
         //Pivot
         double* temp = U[k];
+        #pragma omp critical
         {
             U[k] = U[maxRow];
             U[maxRow] = temp;
         }
         
-        #pragma omp barrier
+        //#pragma omp barrier
         //printf("Pivot %d, %d\n", k+1, maxRow+1);
         //PrintMat((double**)U, 3, 4);
         //printf("\n");
 
         //Elimination
-
+        #pragma omp parallel default(none) shared(n, U, k)
         for (int i = k + 1; i < n; ++i){
             double temp = U[i][k]/U[k][k];
-            #pragma omp parallel for default(none) shared(k, U, temp, i, n)
+            #pragma omp for
             for (int j = k; j < n + 1; ++j){
                 U[i][j] = U[i][j] - temp*U[k][j];
             }
@@ -77,7 +78,7 @@ void gaussianElimination(double** G, int n, double** U){
             //PrintMat((double**)U, 3, 4);
             //printf("\n");
         }
-        #pragma omp barrier
+        //#pragma omp barrier
 
         
     }
@@ -94,10 +95,11 @@ void jordanElimination(int n, double** U, double** D){
     for(int i=0; i < n; i++){
         memcpy(D[i], U[i], sizeof(double)*(n+1));
     }
+    #pragma omp parallel default(none) shared(D,n)
     for(int k=n; k >= 2; k--){
-        #pragma omp parallel for default(none) shared(k,D,n)
-        for(int i=1; i<k-1; i++){
-            D[i][n+1] -= (D[i][k]/D[k][k])*D[k][n+1];
+        #pragma omp for
+        for(int i=0; i<k-1; i++){
+            D[i][n] -= (D[i][k]/D[k][k])*D[k][n];
             D[i][k] = 0;
         }
     }
@@ -129,13 +131,16 @@ int main(int argc, char* argv[]){
     gaussianElimination(G, n, U);
     jordanElimination(n, U, D);
 
-    GET_TIME(endTime);
-    double Time = endTime - startTime;
+    #pragma omp parallel for shared(n)
     for (int i=0; i < n; ++i){
         x[i]= D[i][n] / D[i][i]; 
     }
+
+    GET_TIME(endTime);
+    double Time = endTime - startTime;
+
     Lab3SaveOutput(x, n, Time);
-    PrintMat(U, n, n + 1); //Testing
+    //PrintMat(D, n, n + 1); //Testing
     DestroyMat(G, n);
     DestroyMat(U, n);
     DestroyMat(D, n);
