@@ -28,8 +28,8 @@ void gaussianElimination(double** G, int n, double** U){
         
         //Pivot for absoulte max
         int maxRow = k;
-        int maxVal = 0;
-        int localMaxVal = 0;
+        double maxVal = 0;
+        double localMaxVal = 0;
         int localMaxRow = k;
         #pragma omp parallel private(localMaxVal, localMaxRow) shared(U, n)
         {
@@ -37,7 +37,7 @@ void gaussianElimination(double** G, int n, double** U){
             #pragma omp for 
             for(int p = k; p < n; ++p){
                 //Find max
-                if(fabs(U[p][k]) > maxVal){
+                if(fabs(U[p][k]) > localMaxVal){
                     localMaxVal = fabs(U[p][k]);
                     localMaxRow = p;
                 }  
@@ -95,9 +95,9 @@ void jordanElimination(int n, double** U, double** D){
     for(int i=0; i < n; i++){
         memcpy(D[i], U[i], sizeof(double)*(n+1));
     }
-    #pragma omp parallel default(none) shared(D,n)
-    for(int k=n; k >= 2; k--){
-        #pragma omp for
+    //#pragma omp parallel default(none) shared(D,n)
+    for(int k=n-1; k >= 2; k--){
+        //#pragma omp for
         for(int i=0; i<k-1; i++){
             D[i][n] -= (D[i][k]/D[k][k])*D[k][n];
             D[i][k] = 0;
@@ -129,7 +129,7 @@ int main(int argc, char* argv[]){
     GET_TIME(startTime);
     
     gaussianElimination(G, n, U);
-    jordanElimination(n, U, D);
+    //jordanElimination(n, U, D);
 
     #pragma omp parallel for shared(n)
     for (int i=0; i < n; ++i){
@@ -140,7 +140,7 @@ int main(int argc, char* argv[]){
     double Time = endTime - startTime;
 
     Lab3SaveOutput(x, n, Time);
-    //PrintMat(D, n, n + 1); //Testing
+    PrintMat(U, n, n + 1); //Testing
     DestroyMat(G, n);
     DestroyMat(U, n);
     DestroyMat(D, n);
