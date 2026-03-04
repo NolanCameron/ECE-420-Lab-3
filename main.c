@@ -95,10 +95,10 @@ void jordanElimination(int n, double** U, double** D){
     for(int i=0; i < n; i++){
         memcpy(D[i], U[i], sizeof(double)*(n+1));
     }
-    //#pragma omp parallel default(none) shared(D,n)
-    for(int k=n-1; k >= 2; k--){
-        //#pragma omp for
-        for(int i=0; i<k-1; i++){
+    #pragma omp parallel default(none) shared(D,n)
+    for(int k=n-1; k >= 1; k--){
+        #pragma omp for
+        for(int i=0; i<k; i++){
             D[i][n] -= (D[i][k]/D[k][k])*D[k][n];
             D[i][k] = 0;
         }
@@ -129,7 +129,7 @@ int main(int argc, char* argv[]){
     GET_TIME(startTime);
     
     gaussianElimination(G, n, U);
-    //jordanElimination(n, U, D);
+    jordanElimination(n, U, D);
 
     #pragma omp parallel for shared(n)
     for (int i=0; i < n; ++i){
@@ -140,7 +140,9 @@ int main(int argc, char* argv[]){
     double Time = endTime - startTime;
 
     Lab3SaveOutput(x, n, Time);
-    PrintMat(U, n, n + 1); //Testing
+    //PrintMat(U, n, n + 1); //Testing
+    //printf("\n\n");
+    //PrintMat(D,n,n+1);//also testing
     DestroyMat(G, n);
     DestroyMat(U, n);
     DestroyMat(D, n);
