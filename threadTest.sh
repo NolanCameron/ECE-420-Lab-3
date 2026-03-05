@@ -12,7 +12,7 @@ rm diff.txt
 touch diff.txt
 touch outputs.txt
 
-./main 5
+./main 1
 cp data_output temp.txt
 
 for i in {1..50}
