@@ -53,6 +53,7 @@ void gaussianElimination(double** G, int n, double** U){
 
             }
         }
+
         //Pivot
         double* temp = U[k];
         #pragma omp critical
@@ -95,14 +96,16 @@ void jordanElimination(int n, double** U, double** D){
     for(int i=0; i < n; i++){
         memcpy(D[i], U[i], sizeof(double)*(n+1));
     }
-    #pragma omp parallel default(none) shared(D,n)
+
     for(int k=n-1; k >= 1; k--){
-        #pragma omp for
+        double multi = D[k][n];
+        #pragma omp parallel default(none) shared(D,n,k,multi)
         for(int i=0; i<k; i++){
-            D[i][n] -= (D[i][k]/D[k][k])*D[k][n];
+            D[i][n] -= (D[i][k]/D[k][k])*multi;
             D[i][k] = 0;
         }
     }
+
 }
 
 
@@ -128,13 +131,21 @@ int main(int argc, char* argv[]){
 
     GET_TIME(startTime);
     
+    #pragma omp barrier
+
     gaussianElimination(G, n, U);
+
+    #pragma omp barrier
+
     jordanElimination(n, U, D);
 
-    #pragma omp parallel for shared(n)
+    #pragma omp barrier
+
     for (int i=0; i < n; ++i){
         x[i]= D[i][n] / D[i][i]; 
     }
+
+    #pragma omp barrier
 
     GET_TIME(endTime);
     double Time = endTime - startTime;
