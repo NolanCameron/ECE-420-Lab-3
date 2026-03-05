@@ -93,14 +93,14 @@ void gaussianElimination(double** G, int n, double** U){
 *
 */
 void jordanElimination(int n, double** U, double** D){
-    for(int i=0; i < n; ++i){
+    for(int i=0; i < n; i++){
         memcpy(D[i], U[i], sizeof(double)*(n+1));
     }
 
     for(int k=n-1; k >= 1; k--){
         double multi = D[k][n];
         #pragma omp parallel default(none) shared(D,n,k,multi)
-        for(int i=0; i<k; ++i){
+        for(int i=0; i<k; i++){
             D[i][n] -= (D[i][k]/D[k][k])*multi;
             D[i][k] = 0;
         }
